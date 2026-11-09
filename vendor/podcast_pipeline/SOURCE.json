@@ -1,0 +1,37 @@
+{
+  "repository": "https://github.com/LAION-AI/Humaneness-Voice",
+  "revision": "73db4168188dd50daf277b6449d5741e07530bc2",
+  "sha256": {
+    "recipe.py": "ede893c3ead11f5540cfd8721c75aab5d3612f0d511f6d4bb7dd40e1a42192c2",
+    "run.py": "1773a36cae62fc1de6b3cc59ae893bd54e5cda20065f9a5972b54608eb7dd77e",
+    "generation.py": "2bcf575383aba32f14e21d9c7087d3e10b0aa6240f88998bce54c4be4c428192",
+    "offline_batch.py": "d5b390625f4351fa1789a74100f0b50abe5f78e5b7b16e645e54b3a0127ee7f3",
+    "scoring.py": "fffc89db6534a326272bb38e1039c46575b911e330fbea393ab49ec550cbce12",
+    "speaker_scoring.py": "e355d7f3b9571d20564a981cf2028ed74f029ab9e4d0918f81e2140c1526ce9b",
+    "languages.py": "f57c3263d9c1e52930f51ecc67cbf674c1a130db953434ea39e1c5ed46314664",
+    "audit_alignment.py": "a729e89d7f17d6d41865dda78086ea8518a957543aa2bfaa04eade1a53be379a",
+    "runtime/APACHE-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "runtime/published_audio.py": "01155a8975bb9ad09ebedd60c33910370dd84599e5a1bdd0bcd83ae19bc15645",
+    "runtime/semantic_graph.py": "f5177bd119633417f9704e7967f7d8fe68296429c8e0f6f815350b9da769954d",
+    "runtime/generate.py": "f7fc075e83801574c6e491c6af5e021135882509c28c7965f06d91054c8d9a34",
+    "runtime/audio_export.py": "ee4b770a7fa0125de16800dacd95abea8670cf89844a679683ba852db3110f46",
+    "runtime/local_fused.py": "2a977365935eeffa80f711c61d66b37b7f25db6eef5e1028debc9b2a00652ee9",
+    "runtime/codec_fused.py": "e2deb62ea9344f6073107647ca114c8faef51904d2e6daaa3d1e27b6811f754f",
+    "runtime/phased_generate.py": "57b767cf20e4b7bfaf2e762f25db177677d78d829b6cdcb6c7dddf132dadead6",
+    "runtime/performance_core.py": "645e9d33d866f3113cd132e26c13a1538fa3f497cb550656bd6a3e9628f0d8a2",
+    "runtime/PODCAST_UPSTREAM_NOTICE.md": "256bc9697f7a856f8cf9a2380dc92c1d3845022d861de00c635ac66d56a8bc49",
+    "runtime/semantic_layerwise.py": "59675f59e87450e89e891c9fcc7046a8b128dfd17606f388e294820293e15dcf",
+    "runtime/settings.py": "4c6dd861f36eb582ddef65780601a11c513eb4427c32aee461ce283057d9d629",
+    "runtime/align_engine.py": "64d49c130aa7d042fd8f43da1bb5a47a037b0deb408f01e9ae7d2e6ae573cec0",
+    "runtime/config.py": "3dec1ab6944c40ee7c44cecd06e676b87620e37c0bd1ca7efdf6203d429d27b3",
+    "runtime/PODCAST_UPSTREAM_LICENSE": "cc980e308d6c61586ea8d4707a3c57a5023f86e24c93ae21aa9dabc43881fe68",
+    "runtime/ears_reward.py": "1d607446d9f55f59e62440d98e46519c2489d502e57ee9e14ad8fb6988e47216"
+  },
+  "local_modifications": [
+    {
+      "path": "recipe.py",
+      "description": "Pinned download revision rebound to the cleaned public model history; weight/configuration bytes and inference settings are unchanged.",
+      "sha256": "ede893c3ead11f5540cfd8721c75aab5d3612f0d511f6d4bb7dd40e1a42192c2"
+    }
+  ]
+}

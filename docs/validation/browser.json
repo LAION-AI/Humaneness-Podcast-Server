@@ -1,0 +1,17 @@
+{
+  "tested_at": "2026-11-09T10:35:19.331Z",
+  "public_url": "https://arrive-locations-parade-research.trycloudflare.com/podcast/",
+  "script_validation": true,
+  "private_completed_job_recovery_in_browser": true,
+  "actual_mp3_playback": {
+    "time": 1.015133,
+    "duration": 7.968,
+    "ready": 4
+  },
+  "report_download": true,
+  "mobile": {
+    "width": 390,
+    "scroll": 390
+  },
+  "console_errors": []
+}

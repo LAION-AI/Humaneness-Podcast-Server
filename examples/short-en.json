@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "title": "A small thought about meaning",
+  "language": "en",
+  "speakers": {"host": "reference_s1", "guest": "reference_s2"},
+  "options": {"best_of": 4, "seed": 20261109, "temperature": 1.0, "cfg": 2.5},
+  "turns": [
+    {"type": "speech", "speaker": "host", "text": "What makes an ordinary day feel meaningful?", "direction": "warm, gently curious; relaxed, spontaneous, gently spoken", "pause_after_ms": 400},
+    {"type": "pause", "duration_ms": 500},
+    {"type": "speech", "speaker": "guest", "text": "Perhaps it starts with doing one small thing for someone we care about.", "direction": "thoughtful, sincere; easy, spontaneous, gently spoken", "pause_after_ms": 400}
+  ]
+}

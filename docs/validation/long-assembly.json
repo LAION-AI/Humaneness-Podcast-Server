@@ -1,0 +1,9 @@
+{
+  "fixture": "600 authored tone clips; NOT TTS inference",
+  "seconds": 1258.8999999999717,
+  "wall_seconds": 169.23853002488613,
+  "peak_process_rss_kib": 1446272,
+  "bitrate_bps": 128000,
+  "channels": 1,
+  "output_bytes": 20143561
+}

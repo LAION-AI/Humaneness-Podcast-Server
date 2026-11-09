@@ -1,0 +1,19 @@
+# Install the CUDA Torch wheels first; see README. Python 3.12 was tested.
+torch==2.6.0
+torchaudio==2.6.0
+transformers==5.15.0
+numpy==1.26.4
+scipy==1.17.1
+soundfile==0.14.0
+safetensors==0.8.0
+httpx==0.28.1
+speechbrain==1.1.0
+pydantic==2.13.4
+huggingface_hub==1.27.0
+sentencepiece==0.2.2
+accelerate==1.14.0
+einops==0.8.2
+librosa==0.11.0
+fastapi==0.141.1
+uvicorn==0.52.1
+pytest==9.1.1

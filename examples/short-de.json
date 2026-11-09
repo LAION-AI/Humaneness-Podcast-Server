@@ -1,0 +1,8 @@
+{
+  "version": "1.0", "title": "Ein kleiner Gedanke", "language": "de",
+  "speakers": {"host": "reference_s1", "guest": "reference_s2"},
+  "turns": [
+    {"type": "speech", "speaker": "host", "text": "Was macht einen ganz normalen Tag eigentlich wertvoll?", "direction": "warm, gently curious; relaxed, spontaneous, gently spoken"},
+    {"type": "speech", "speaker": "guest", "text": "Vielleicht beginnt es damit, dass wir füreinander da sind.", "direction": "thoughtful, sincere; easy, spontaneous, gently spoken"}
+  ]
+}

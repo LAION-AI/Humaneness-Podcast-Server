@@ -1,0 +1,541 @@
+{
+  "date": "2026-11-09",
+  "hardware": "shared NVIDIA RTX 3090, CUDA 12.4, BF16",
+  "records": [
+    {
+      "label": "EN short N4",
+      "state": "completed",
+      "language": "en",
+      "best_of": 4,
+      "speech_turns": 2,
+      "candidates": 8,
+      "process_attempts": 1,
+      "request_to_complete_seconds": 228.38291931152344,
+      "latest_worker_seconds": 220.84,
+      "audio_seconds": 7.93,
+      "review_flags": [],
+      "policy_load_seconds": [
+        104.05669601261616
+      ],
+      "codec_graph_checks": [],
+      "unique_token_batches": [
+        {
+          "turn": 0,
+          "n": 4,
+          "wall_seconds": 22.502181589603424,
+          "steps": 320,
+          "max_memory_allocated_bytes": 9526656000
+        },
+        {
+          "turn": 2,
+          "n": 4,
+          "wall_seconds": 9.733684569597244,
+          "steps": 320,
+          "max_memory_allocated_bytes": 9588666368
+        }
+      ],
+      "turn_processing": [
+        {
+          "turn": 0,
+          "decode_seconds": 9.740248441696167,
+          "ranking_seconds": 1.4984485879540443,
+          "audit_seconds": 1.0789029076695442,
+          "wer": 0.0,
+          "winner": 2,
+          "seconds": 3.35
+        },
+        {
+          "turn": 2,
+          "decode_seconds": 8.844735980033875,
+          "ranking_seconds": 1.1516135409474373,
+          "audit_seconds": 0.8850875347852707,
+          "wer": 0.0,
+          "winner": 1,
+          "seconds": 3.91
+        }
+      ]
+    },
+    {
+      "label": "DE six-turn N2",
+      "state": "completed",
+      "language": "de",
+      "best_of": 2,
+      "speech_turns": 6,
+      "candidates": 12,
+      "process_attempts": 1,
+      "request_to_complete_seconds": 212.27000832557678,
+      "latest_worker_seconds": 205.51,
+      "audio_seconds": 48.96,
+      "review_flags": [
+        {
+          "turn": 2,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        },
+        {
+          "turn": 5,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Generation reached 25.6-second ceiling; possible truncation",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        }
+      ],
+      "policy_load_seconds": [
+        29.948280304670334
+      ],
+      "codec_graph_checks": [],
+      "unique_token_batches": [
+        {
+          "turn": 0,
+          "n": 2,
+          "wall_seconds": 40.29718481004238,
+          "steps": 67,
+          "max_memory_allocated_bytes": 9290714624
+        },
+        {
+          "turn": 1,
+          "n": 2,
+          "wall_seconds": 3.6405712962150574,
+          "steps": 141,
+          "max_memory_allocated_bytes": 9155759104
+        },
+        {
+          "turn": 2,
+          "n": 2,
+          "wall_seconds": 2.7851081266999245,
+          "steps": 105,
+          "max_memory_allocated_bytes": 9159403008
+        },
+        {
+          "turn": 3,
+          "n": 2,
+          "wall_seconds": 4.8652979880571365,
+          "steps": 189,
+          "max_memory_allocated_bytes": 9155759104
+        },
+        {
+          "turn": 4,
+          "n": 2,
+          "wall_seconds": 2.2665993571281433,
+          "steps": 84,
+          "max_memory_allocated_bytes": 9159403008
+        },
+        {
+          "turn": 5,
+          "n": 2,
+          "wall_seconds": 7.977409936487675,
+          "steps": 320,
+          "max_memory_allocated_bytes": 9155759104
+        }
+      ],
+      "turn_processing": [
+        {
+          "turn": 0,
+          "decode_seconds": 2.79349235445261,
+          "ranking_seconds": 0.7472154870629311,
+          "audit_seconds": 1.0893861204385757,
+          "wer": 0.0,
+          "winner": 1,
+          "seconds": 3.43
+        },
+        {
+          "turn": 1,
+          "decode_seconds": 4.7837893813848495,
+          "ranking_seconds": 0.5807517394423485,
+          "audit_seconds": 0.7896240502595901,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 3.43
+        },
+        {
+          "turn": 2,
+          "decode_seconds": 4.139711461961269,
+          "ranking_seconds": 0.4617330953478813,
+          "audit_seconds": 1.1320915892720222,
+          "wer": 1.125,
+          "winner": 0,
+          "seconds": 8.4
+        },
+        {
+          "turn": 3,
+          "decode_seconds": 6.120977386832237,
+          "ranking_seconds": 0.5994448140263557,
+          "audit_seconds": 1.3979864344000816,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 3.67
+        },
+        {
+          "turn": 4,
+          "decode_seconds": 3.2744886726140976,
+          "ranking_seconds": 0.5539796948432922,
+          "audit_seconds": 0.9278063774108887,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 3.27
+        },
+        {
+          "turn": 5,
+          "decode_seconds": 9.603738516569138,
+          "ranking_seconds": 0.680435486137867,
+          "audit_seconds": 1.8168212920427322,
+          "wer": 2.4444444444444446,
+          "winner": 1,
+          "seconds": 25.6
+        }
+      ]
+    },
+    {
+      "label": "EN ten-turn N1 with worker crash",
+      "state": "completed",
+      "language": "en",
+      "best_of": 1,
+      "speech_turns": 10,
+      "candidates": 10,
+      "process_attempts": 2,
+      "request_to_complete_seconds": 296.4490690231323,
+      "latest_worker_seconds": 175.09,
+      "audio_seconds": 139.7,
+      "review_flags": [
+        {
+          "turn": 2,
+          "warnings": [
+            "Generation reached 25.6-second ceiling; possible truncation"
+          ]
+        },
+        {
+          "turn": 6,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        },
+        {
+          "turn": 8,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Generation reached 25.6-second ceiling; possible truncation",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        },
+        {
+          "turn": 9,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Generation reached 25.6-second ceiling; possible truncation",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        },
+        {
+          "turn": 12,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Generation reached 25.6-second ceiling; possible truncation",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        },
+        {
+          "turn": 14,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Generation reached 25.6-second ceiling; possible truncation",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        }
+      ],
+      "policy_load_seconds": [
+        28.999901965260506
+      ],
+      "codec_graph_checks": [],
+      "unique_token_batches": [
+        {
+          "turn": 0,
+          "n": 1,
+          "wall_seconds": 13.707520842552185,
+          "steps": 81,
+          "max_memory_allocated_bytes": 8910101504
+        },
+        {
+          "turn": 2,
+          "n": 1,
+          "wall_seconds": 5.699055999517441,
+          "steps": 320,
+          "max_memory_allocated_bytes": 8900265984
+        },
+        {
+          "turn": 3,
+          "n": 1,
+          "wall_seconds": 1.4882800877094269,
+          "steps": 71,
+          "max_memory_allocated_bytes": 8904184832
+        },
+        {
+          "turn": 5,
+          "n": 1,
+          "wall_seconds": 1.8834270983934402,
+          "steps": 79,
+          "max_memory_allocated_bytes": 8900265984
+        },
+        {
+          "turn": 6,
+          "n": 1,
+          "wall_seconds": 3.2095683068037033,
+          "steps": 170,
+          "max_memory_allocated_bytes": 8904184832
+        },
+        {
+          "turn": 8,
+          "n": 1,
+          "wall_seconds": 5.79241294413805,
+          "steps": 320,
+          "max_memory_allocated_bytes": 8900265984
+        },
+        {
+          "turn": 9,
+          "n": 1,
+          "wall_seconds": 5.637231007218361,
+          "steps": 320,
+          "max_memory_allocated_bytes": 8904184832
+        },
+        {
+          "turn": 11,
+          "n": 1,
+          "wall_seconds": 1.2889469489455223,
+          "steps": 60,
+          "max_memory_allocated_bytes": 8900265984
+        },
+        {
+          "turn": 12,
+          "n": 1,
+          "wall_seconds": 5.821397490799427,
+          "steps": 320,
+          "max_memory_allocated_bytes": 8904184832
+        },
+        {
+          "turn": 14,
+          "n": 1,
+          "wall_seconds": 5.804763652384281,
+          "steps": 320,
+          "max_memory_allocated_bytes": 8900265984
+        }
+      ],
+      "turn_processing": [
+        {
+          "turn": 0,
+          "decode_seconds": 3.5482883229851723,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 1.427068553864956,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 2.95
+        },
+        {
+          "turn": 2,
+          "decode_seconds": 10.083785936236382,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 1.4403448700904846,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 4.07
+        },
+        {
+          "turn": 3,
+          "decode_seconds": 2.7451698184013367,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 0.919661782681942,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 3.51
+        },
+        {
+          "turn": 5,
+          "decode_seconds": 2.9443746209144592,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 0.8374830633401871,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 3.99
+        },
+        {
+          "turn": 6,
+          "decode_seconds": 5.817000523209572,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 1.2528573423624039,
+          "wer": 0.2857142857142857,
+          "winner": 0,
+          "seconds": 13.6
+        },
+        {
+          "turn": 8,
+          "decode_seconds": 8.96341397613287,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 1.742894895374775,
+          "wer": 1.0,
+          "winner": 0,
+          "seconds": 25.6
+        },
+        {
+          "turn": 9,
+          "decode_seconds": 8.896577164530754,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 1.8249362632632256,
+          "wer": 4.571428571428571,
+          "winner": 0,
+          "seconds": 25.6
+        },
+        {
+          "turn": 11,
+          "decode_seconds": 3.00032739341259,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 0.8804663941264153,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 4.15
+        },
+        {
+          "turn": 12,
+          "decode_seconds": 8.85516794025898,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 1.9294608533382416,
+          "wer": 2.142857142857143,
+          "winner": 0,
+          "seconds": 25.6
+        },
+        {
+          "turn": 14,
+          "decode_seconds": 10.302641995251179,
+          "ranking_seconds": 0.0,
+          "audit_seconds": 1.8417981788516045,
+          "wer": 1.6153846153846154,
+          "winner": 0,
+          "seconds": 25.6
+        }
+      ]
+    },
+    {
+      "label": "EN approved longer N4 with decoder graph",
+      "state": "completed",
+      "language": "en",
+      "best_of": 4,
+      "speech_turns": 2,
+      "candidates": 8,
+      "process_attempts": 1,
+      "request_to_complete_seconds": 187.9875283241272,
+      "latest_worker_seconds": 131.58,
+      "audio_seconds": 35.36,
+      "review_flags": [
+        {
+          "turn": 0,
+          "warnings": [
+            "Generation reached 25.6-second ceiling; possible truncation"
+          ]
+        },
+        {
+          "turn": 1,
+          "warnings": [
+            "ASR transcript disagreement; listen before publication",
+            "Generation reached 25.6-second ceiling; possible truncation",
+            "Uncertain alignment: retained untrimmed audio"
+          ]
+        }
+      ],
+      "policy_load_seconds": [
+        22.685276441276073
+      ],
+      "codec_graph_checks": [
+        {
+          "batch": 4,
+          "bit_identical": true
+        }
+      ],
+      "unique_token_batches": [
+        {
+          "turn": 0,
+          "n": 4,
+          "wall_seconds": 24.25721777230501,
+          "steps": 320,
+          "max_memory_allocated_bytes": 9543918080
+        },
+        {
+          "turn": 1,
+          "n": 4,
+          "wall_seconds": 9.73484356701374,
+          "steps": 320,
+          "max_memory_allocated_bytes": 9641837568
+        }
+      ],
+      "turn_processing": [
+        {
+          "turn": 0,
+          "decode_seconds": 5.9873532727360725,
+          "ranking_seconds": 1.4612788408994675,
+          "audit_seconds": 2.0870819240808487,
+          "wer": 0.0,
+          "winner": 0,
+          "seconds": 9.51
+        },
+        {
+          "turn": 1,
+          "decode_seconds": 1.561427280306816,
+          "ranking_seconds": 1.301784336566925,
+          "audit_seconds": 1.869886502623558,
+          "wer": 0.25,
+          "winner": 3,
+          "seconds": 25.6
+        }
+      ]
+    },
+    {
+      "label": "DE one-turn N8 with microbatch 4",
+      "state": "completed",
+      "language": "de",
+      "best_of": 8,
+      "speech_turns": 1,
+      "candidates": 8,
+      "process_attempts": 1,
+      "request_to_complete_seconds": 113.03285312652588,
+      "latest_worker_seconds": 105.61,
+      "audio_seconds": 3.83,
+      "review_flags": [],
+      "policy_load_seconds": [
+        20.11730134487152
+      ],
+      "codec_graph_checks": [
+        {
+          "batch": 4,
+          "bit_identical": true
+        }
+      ],
+      "unique_token_batches": [
+        {
+          "turn": 0,
+          "n": 4,
+          "wall_seconds": 14.74744625389576,
+          "steps": 87,
+          "max_memory_allocated_bytes": 9526664192
+        },
+        {
+          "turn": 0,
+          "n": 4,
+          "wall_seconds": 9.725471161305904,
+          "steps": 320,
+          "max_memory_allocated_bytes": 9597142528
+        }
+      ],
+      "turn_processing": [
+        {
+          "turn": 0,
+          "decode_seconds": 6.621762283146381,
+          "ranking_seconds": 2.423843525350094,
+          "audit_seconds": 1.0008386597037315,
+          "wer": 0.0,
+          "winner": 1,
+          "seconds": 3.83
+        }
+      ]
+    }
+  ]
+}

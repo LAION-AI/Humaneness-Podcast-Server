@@ -1,0 +1,9 @@
+{
+  "interrupted_at": 1794220433.3439991,
+  "action": "SIGKILL only this job worker; supervisor retries automatically",
+  "final_state": "completed",
+  "process_attempts": 2,
+  "hashes_unchanged": true,
+  "result_duration_s": 139.7,
+  "checked_candidate_files": 10
+}
