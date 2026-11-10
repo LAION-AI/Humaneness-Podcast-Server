@@ -29,6 +29,11 @@
   },
   "local_modifications": [
     {
+      "path": "references/PROVENANCE.json",
+      "description": "Use a neutral synthetic reference-pack label; reference audio, acoustic codes and inference code are unchanged.",
+      "sha256": "a5e08afd717070d35d388ad576a9ad188e05fc667f03231d441b3fce898690b0"
+    },
+    {
       "path": "recipe.py",
       "description": "Pinned download revision rebound to the cleaned public model history; weight/configuration bytes and inference settings are unchanged.",
       "sha256": "ede893c3ead11f5540cfd8721c75aab5d3612f0d511f6d4bb7dd40e1a42192c2"
