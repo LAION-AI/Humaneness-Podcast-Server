@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "title": "Eine kleine Pause",
+  "language": "de",
+  "speakers": {"host": "reference_s1", "guest": "reference_s2"},
+  "options": {"seed": 20261114},
+  "turns": [
+    {"type": "speech", "speaker": "host", "text": "Manchmal hilft eine kleine Pause. Dann merken wir wieder, was uns wichtig ist und wem wir heute eine Freude machen können.", "direction": "warm, gently curious; relaxed, spontaneous, gently spoken", "pause_after_ms": 400},
+    {"type": "pause", "duration_ms": 500},
+    {"type": "speech", "speaker": "guest", "text": "Ja, und dafür brauchen wir keinen perfekten Plan. Ein offenes Ohr und ein freundlicher Satz können schon einen Unterschied machen.", "direction": "thoughtful, sincere; easy, spontaneous, gently spoken"}
+  ]
+}

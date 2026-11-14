@@ -1,0 +1,67 @@
+{
+  "date": "2026-11-14",
+  "script_fixture": "tests/fixtures/cleanup-de.json",
+  "best_of": 4,
+  "candidates_generated": 8,
+  "reward_winners_unchanged": true,
+  "speech_cleanup": {
+    "trimmed_head_seconds": 0.0,
+    "trimmed_tail_seconds": 19.840000000000003,
+    "muted_internal_seconds": 0.0,
+    "internal_gaps": 0,
+    "turns_with_unverified_edges": 0
+  },
+  "duration_seconds": 15.26,
+  "worker_seconds": 169.54,
+  "job_elapsed_seconds": 175.5,
+  "assembly_seconds": 3.016083888709545,
+  "scripted_gap_seconds": 0.8999999999999995,
+  "model_revision": "91f8110cd815f2233301a8b1dd16dbbf3fae8e05",
+  "cleanup_policy": {
+    "version": "script-anchors-v1",
+    "lead_guard_s": 0.1,
+    "tail_guard_s": 0.1,
+    "fade_s": 0.1,
+    "min_internal_gap_s": 0.65,
+    "minimum_anchor_coverage": 0.65,
+    "timestamp_disagreement_s": 0.32,
+    "internal_gap_mode": "silence_preserve_duration"
+  },
+  "turns": [
+    {
+      "turn": 0,
+      "chosen_candidate": 2,
+      "candidate_count": 4,
+      "original_asr_wer": 0.0,
+      "edited_asr_wer": 0.0,
+      "final_asr_model": "parakeet_ultra",
+      "final_asr_revision": "73175eb7aeb0d82f1e2a6b53b3aabc10a90bcd0b",
+      "removed_tail_seconds": 1.3200000000000003,
+      "cleanup_cpu_ms": 3.640405833721161,
+      "first_word_verified": true,
+      "last_word_verified": true,
+      "warnings": [
+        "ASR/forced alignment disagreement: internal edits at those words skipped"
+      ]
+    },
+    {
+      "turn": 2,
+      "chosen_candidate": 3,
+      "candidate_count": 4,
+      "original_asr_wer": 1.1,
+      "edited_asr_wer": 0.0,
+      "final_asr_model": "parakeet_ultra",
+      "final_asr_revision": "73175eb7aeb0d82f1e2a6b53b3aabc10a90bcd0b",
+      "removed_tail_seconds": 18.520000000000003,
+      "cleanup_cpu_ms": 3.751426935195923,
+      "first_word_verified": true,
+      "last_word_verified": true,
+      "warnings": [
+        "ASR transcript disagreement; listen before publication",
+        "Generation reached 25.6-second ceiling; possible truncation",
+        "ASR/forced alignment disagreement: internal edits at those words skipped"
+      ]
+    }
+  ],
+  "final_asr_caveat": "Additional evaluation request to existing Parakeet Ultra/Photon; same recognizer family, not independent human listening. Not a production dependency."
+}

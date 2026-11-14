@@ -13,6 +13,7 @@ def silence(writer,seconds):
 
 def assemble(path,episode):
     tick=time.monotonic();cursor=0.;last_word=None;gap=0.;timeline=[];reviews=[]
+    cleanup={'trimmed_head_seconds':0.,'trimmed_tail_seconds':0.,'muted_internal_seconds':0.,'internal_gaps':0,'turns_with_unverified_edges':0}
     source=path/'assembled.pending.flac'
     with sf.SoundFile(source,'w',samplerate=SR,channels=1,subtype='PCM_24') as f:
         for i,t in enumerate(episode.turns):
@@ -20,6 +21,12 @@ def assemble(path,episode):
             row=json.loads((path/f'turn-{i:04d}.json').read_text());clip=path/f'turn-{i:04d}.flac'
             if hashlib.sha256(clip.read_bytes()).hexdigest()!=row['sha256']:raise ValueError('Selected audio checksum mismatch')
             first=row['edit']['first_word_in_clip_s'];last=row['edit']['last_word_in_clip_s']
+            edit=row['edit']
+            cleanup['trimmed_head_seconds']+=edit.get('removed_head_s',0.)
+            cleanup['trimmed_tail_seconds']+=edit.get('removed_tail_s',0.)
+            cleanup['muted_internal_seconds']+=edit.get('muted_gap_seconds',0.)
+            cleanup['internal_gaps']+=len(edit.get('gap_edits',[]))
+            cleanup['turns_with_unverified_edges']+=int(edit.get('first_word_verified') is False or edit.get('last_word_verified') is False)
             needed=gap if last_word is None else max(0.,gap-(cursor-last_word)-first)
             silence(f,needed);cursor+=needed
             actual_gap=None if last_word is None else cursor+first-last_word
@@ -42,6 +49,6 @@ def assemble(path,episode):
     subprocess.run(['ffmpeg','-nostdin','-v','error','-i',str(target),'-f','null','-'],check=True,timeout=600,capture_output=True)
     target.replace(path/'episode.mp3');source.unlink()
     atomic(path/'timeline.json',timeline)
-    result={'duration_seconds':cursor,'format':'mp3','channels':1,'bitrate_bps':128000,'sample_rate':48000,'bytes':(path/'episode.mp3').stat().st_size,'review_flags':reviews,'assembly_seconds':time.monotonic()-tick}
+    result={'duration_seconds':cursor,'format':'mp3','channels':1,'bitrate_bps':128000,'sample_rate':48000,'bytes':(path/'episode.mp3').stat().st_size,'review_flags':reviews,'speech_cleanup':cleanup,'assembly_seconds':time.monotonic()-tick}
     atomic(path/'result.json',result)
     return result

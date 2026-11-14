@@ -66,6 +66,7 @@ Reference recordings are not covered by this server's CC BY 4.0 code license. Th
 - **Waiting for GPU:** inspect `nvidia-smi`; free unused models only if you own them. Reduce the operator microbatch for transient activation OOM. Do not lower N secretly.
 - **First request is slow:** imports, CPU checkpoint construction, CUDA compilation/graph creation, and several frozen judge models load before the final export. Warm kernels persist on disk; GPU weights do not stay resident between jobs in this shared-host implementation.
 - **Incomplete words:** inspect the report's ASR and cap flags. Split turns shorter and submit a new job; the maximum-reward take can omit content.
+- **Unwanted mumbling/tails:** new jobs use the default [script-anchored editor](SPEECH_CLEANUP.md). Inspect `edit.first_word_verified`, `last_word_verified`, `gap_edits` and warnings. Whole-clip ASR disagreement no longer disables every edit. Unsupported boundaries remain untrimmed; do not treat an alignment guess as verified speech. Editing-policy changes require a new job because its source/provenance fingerprint is pinned.
 - **Failed/retrying:** read private `jobs/<id>/events.jsonl` and `worker.log`. Use `/retry` after fixing a persistent cause. Saved candidate checksums should remain unchanged.
 - **Bad download:** the endpoint is available only after full MP3 verification. Check proxy Range/header handling and the job token.
 - **Model import mismatch:** use the pinned environment; custom remote model code and Transformer internals are version sensitive.

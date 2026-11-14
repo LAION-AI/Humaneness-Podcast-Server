@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-14",
+  "scope": "Eight previously untrimmed selected German TTS clips, actual ASR and forced alignment; operator-selected regression cohort, not a random quality study",
+  "clips": 8,
+  "tail_trimmed_clips": 7,
+  "tail_seconds_removed": 56.92,
+  "head_seconds_removed": 0.0,
+  "unverified_ends": 1,
+  "gaps_muted": 0,
+  "mean_wer_before": 0.20582955469762065,
+  "mean_wer_after": 0.043382594417077175,
+  "median_asr_alignment_cleanup_seconds": 1.2604473978281021,
+  "worst_wer_increase": 0.0,
+  "private_audio_included": false,
+  "same_asr_family_for_edit_and_evaluation": true
+}
