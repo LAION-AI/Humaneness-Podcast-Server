@@ -35,7 +35,7 @@ def health():
     try:a=config.assets();ready=all(Path(a[k]).exists() for k in ('model','codec','asr','aligner'))
     except (RuntimeError,KeyError):ready=False
     with store.connect() as c:counts={s:n for s,n in c.execute('SELECT state,count(*) FROM jobs GROUP BY state').fetchall()}
-    return {'status':'ok','assets_ready':ready,'jobs':counts,'defaults':{'best_of':4,'temperature':1,'cfg':2.5,'mp3_bitrate_bps':128000,'channels':1},'max_queue':config.MAX_QUEUE,'retention_hours':config.TTL_HOURS,'device':config.DEVICE}
+    return {'status':'ok','assets_ready':ready,'jobs':counts,'defaults':{'best_of':4,'temperature':1,'cfg':2.5,'mp3_bitrate_bps':128000,'channels':1,'script_anchored_cleanup':True},'max_queue':config.MAX_QUEUE,'retention_hours':config.TTL_HOURS,'device':config.DEVICE}
 
 @app.get('/v1/voices')
 def voices():

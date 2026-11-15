@@ -64,6 +64,57 @@ The public `/`, `/health`, `/docs`, `/openapi.json`, authenticated status/downlo
 
 ## Quality and scientific limits
 
-Speaker cosine and genuineness are model estimates. Their combination can select an incomplete or linguistically imperfect take. ASR can also disagree with correct speech. Alignment timestamps are estimates, and uncertain cases retain untrimmed clips. The final report shows these distinctions and does not replace missing scores with invented values. Natural within-turn pauses, exact emotional intensity and language fidelity remain properties of the checkpoint rather than guarantees of this server.
+Speaker cosine and genuineness are model estimates. Their combination can select an incomplete or linguistically imperfect take. ASR can also disagree with correct speech. Alignment timestamps are estimates. The November 14 editor assesses each edge/gap independently and retains uncertain regions; earlier validation used all-or-nothing clip trimming. The final report shows these distinctions and does not replace missing scores with invented values. Natural within-turn pauses, exact emotional intensity and language fidelity remain properties of the checkpoint rather than guarantees of this server.
 
 The release tests cover English/German and N=1/2/4, with an additional N=8 capacity check recorded in the measurements. Dutch/French/Spanish routing and source recipes are included, but this server's new live integration did not regenerate a complete episode in those three languages. N=16 is accepted and is microbatched; it has not received a separate end-to-end quality study here.
+
+## November 14: script-anchored cleanup regression
+
+The new default editor and reproduction commands are in
+[SPEECH_CLEANUP.md](SPEECH_CLEANUP.md). All **28 CPU/API tests** passed, including
+new signal tests for word-sample preservation, fades, internal-gap timing,
+missing negations, conflicting timestamps and explicit nonverbal delivery cues.
+These signal fixtures do not measure speech quality.
+
+A local replay selected eight previously untrimmed German TTS clips with WER
+between 15% and 80%, at most two per episode. Actual Parakeet v3 and Qwen inference
+supported tail cuts in **7/8**, removing **56.92 seconds** of trailing audio. One
+uncertain ending remained untouched and flagged. Mean ASR WER changed from
+**20.58% to 4.34%**; no clip's measured WER increased. This is a deliberately
+selected regression cohort, not a random population estimate. The same ASR
+family both authorizes edits and evaluates the result, so this is not independent
+human listening evidence. The edited tails can include both silence and unwanted
+vocalizations; the removed duration is not a measured duration of mumbling alone.
+
+Median ASR + alignment + cleanup time was **1.26 s per clip**, including the
+existing audit models. Production uses one Parakeet pass and one supported-language
+alignment pass; the extra after-edit transcription is used only by the audit
+script. None of these eight clips exercised an internal gap edit; that part was
+verified by signal fixtures. Private before/after clips and detailed scripts stay
+in the operator audit folder. The checked-in
+[aggregate replay receipt](validation/speech-cleanup-replay.json) contains no
+private episode text, audio or job capabilities.
+
+A fresh public HTTPS Best-of-4 request generated eight candidates for the two-host
+[German fixture](../tests/fixtures/cleanup-de.json), keeping both strict reward
+winners. The resulting **15.26-second** episode completed in **175.5 s** including
+cold worker/model setup (worker 169.54 s). **19.84 s** of trailing audio was removed.
+Both edges of both turns were verified; the explicit **900-ms** gap was preserved
+to sample rounding. CPU editing took **3.64 / 3.75 ms** for the two turns. This
+short cold job is not a steady-state throughput benchmark.
+
+One selected original clip reached the generation ceiling and had 110% diagnostic
+WER due to extra recognized output. Those original review flags remain visible;
+they did not change the winner. A separate final evaluation of the edited clips
+through the host's existing Parakeet Ultra/Photon service recognized all **21 / 20
+script words with zero edit errors**. It is a different checkpoint in the same
+ASR family, not independent human listening or a new production dependency.
+[Fresh-job measurements](validation/speech-cleanup-fresh-job.json).
+
+Actual HTTPS Chromium playback advanced, the authenticated JSON report downloaded,
+390-pixel mobile layout had no overflow, and there were no page errors.
+[Browser receipt](validation/speech-cleanup-browser.json). Reproduce against your
+own completed job with `python tests/browser_cleanup.py --receipt cleanup.local.json
+--result browser-result.json --base https://YOUR-HOST/podcast/`; install Playwright
+in the test environment. Receipts remain private. The browser used a muted audio
+sink, so this is not a physical speaker/headphone listening test.

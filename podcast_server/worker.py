@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from . import config
 from .schema import Episode,Speech
 from .store import atomic,folder,disk_ok
+from .speech_cleanup import cleanup, timed_transcription, POLICY
 
 class Reporter:
     def __init__(self,path):
@@ -60,6 +61,7 @@ def main(job):
         'references':{s:{**{k:v for k,v in ref.items() if k in ('sha256','code_key','label')},'codes_sha256':sha(ref['codes'])} for s,ref in refs.items()},
         'source_sha256':{str(f.relative_to(config.ROOT)):sha(f) for directory in ('podcast_server','vendor/podcast_pipeline') for f in sorted((config.ROOT/directory).rglob('*.py'))},
         'codec_revision':'f6e20e543b33d2c252a7ef71bdf8aa71e5ff9169','ears_revision':'818506970d93c809a3295a0a02c40dee8ff2bfc3','ecapa_revision':'0f99f2d0ebe89ac095bcc5903c4dd8f72b367286',
+        'speech_cleanup':POLICY,
         'execution':'BF16 phased token generation, then decoding/ranking/audit; no voice conversion','python':sys.version.split()[0],'torch':torch.__version__,'gpu':torch.cuda.get_device_name(config.DEVICE)}
     provenance=path/'provenance.json'
     if provenance.exists() and json.loads(provenance.read_text())!=fingerprint:raise RuntimeError('Job provenance changed; submit a new job')
@@ -142,15 +144,13 @@ def main(job):
         proc.audio_tokenizer.decoder.to(config.DEVICE);proc.audio_tokenizer.quantizer.to(config.DEVICE)
         from generation import DecoderOnly,DecoderGraph
         from speaker_scoring import SpeakerScorer
-        from audit_alignment import BoundaryAligner
+        from align_engine import QwenAligner
+        from languages import QWEN_ALIGNMENT_LANGUAGES, language_name
         from scoring import audio16
-        from generate import crop
         codec_graphs={}
         graph_enabled=os.getenv('PODCAST_CODEC_GRAPHS','1')=='1'
         scorer=SpeakerScorer(config.DEVICE,refs,load_asr=True)
-        aligner=BoundaryAligner(config.DEVICE)
-        # Reuse the frozen final-audit Parakeet for fallback boundaries (Dutch, uncertain Qwen).
-        aligner.model=scorer.asr;aligner.proc=scorer.proc
+        aligner=QwenAligner(device=config.DEVICE)
         for i,t in pending:
             if not disk_ok():raise RuntimeError('Storage limit reached during decoding; completed work retained')
             if (path/'cancel').exists():return 130
@@ -206,21 +206,19 @@ def main(job):
                 winner=max(range(len(scores)),key=lambda j:(scores[j]['reward'],-j))
             else:scores=[{'reward':None,'ranking_skipped':True}];winner=0;score_s=0.
             wave=waves[winner];audit_tick=time.monotonic()
-            hypotheses,asr_s=scorer.transcribe([audio16(wave)])
-            err=errors(t.text,hypotheses[0]);warnings=[]
+            wave16=audio16(wave)
+            audit=timed_transcription(scorer.asr,scorer.proc,wave16,config.DEVICE)
+            err=errors(t.text,audit['text']);warnings=[]
             if err['wer']>.15:warnings.append('ASR transcript disagreement; listen before publication')
             if len(codes[winner])>=320:warnings.append('Generation reached 25.6-second ceiling; possible truncation')
-            alignment,meta=aligner.align(audio16(wave),t.text.split(),episode.language)
-            good=bool(alignment) and all(w[3]>.5 for w in alignment)
-            first,last=(float(alignment[0][1]),float(alignment[-1][2])) if good else (0.,len(wave)/48000)
-            good=good and 0<=first<last<=len(wave)/48000+.03 and err['wer']<=.15
-            if good:
-                clip,edit=crop(wave,dict(alignment_ok=True,first_word_s=first,last_word_s=min(last,len(wave)/48000)))
-                edit['timing_basis']=meta['timing_basis']
-            else:
-                clip=wave;edit=dict(first_word_in_clip_s=0.,last_word_in_clip_s=len(wave)/48000,timing_basis='unverified_clip_edges');warnings.append('Uncertain alignment: retained untrimmed audio')
+            alignment=aligner.align(wave16,t.text.split(),language=language_name(episode.language)) if episode.language in QWEN_ALIGNMENT_LANGUAGES else None
+            cleanup_tick=time.monotonic()
+            direction=' '.join([t.direction]+[d.cue for d in (t.delivery_chunks or [])])
+            clip,edit=cleanup(wave,t.text,audit['words'],alignment,direction=direction)
+            edit['processing_seconds']=time.monotonic()-cleanup_tick
+            warnings.extend(edit['warnings'])
             out=path/f'turn-{i:04d}.flac';temp=out.with_suffix('.pending.flac');sf.write(temp,clip,48000,subtype='PCM_24');temp.replace(out)
-            atomic(path/f'turn-{i:04d}.json',dict(index=i,speaker=t.speaker,text=t.text,winner=winner,candidates=scores,warnings=warnings,edit=edit,asr=hypotheses[0],**err,
+            atomic(path/f'turn-{i:04d}.json',dict(index=i,speaker=t.speaker,text=t.text,winner=winner,candidates=scores,warnings=warnings,edit=edit,asr=audit['text'],asr_words=audit['words'],asr_seconds=audit['seconds'],timestamp_status=audit['timestamp_status'],**err,
                 token_batches=[json.loads(codepath(i,c).with_suffix('.json').read_text()) for c in range(opts.best_of) if codepath(i,c).with_suffix('.json').exists()],
                 seconds=len(clip)/48000,decode_seconds=decode_s,ranking_seconds=score_s,audit_seconds=time.monotonic()-audit_tick,sha256=sha(out),pause_after_ms=t.pause_after_ms))
             r('auditing',f'Turn {i+1} selected and checked',selected_turns=sum((path/f'turn-{j:04d}.json').exists() for j,_ in turns))

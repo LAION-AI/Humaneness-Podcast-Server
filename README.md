@@ -14,7 +14,7 @@ The live service uses an existing Cloudflare tunnel. This temporary hostname may
 - Listener-approved sparse spontaneous, relaxed, gentle delivery; temperature **1.0**, CFG **2.5**.
 - Exact reward: **50% normalized Humaneness Ears genuineness + 50% ECAPA similarity to the reference**. No voice conversion, additional LoRA, Content Enjoyment term or WER multiplier.
 - Durable SQLite queue, atomic token/audio checkpoints, bounded retries, smaller microbatches after OOM, cancellation, retry and private authenticated downloads.
-- Final ASR diagnostics and conservative word-boundary editing. Review flags are preserved; the service does not silently replace a high-scoring take because its transcript is imperfect.
+- Final ASR diagnostics and **script-anchored audio cleanup, on by default**: 100-ms fades at verified edges, removal of unrequested lead-ins/tails, and silence in long verified internal gaps while preserving their duration. [Editing policy and tests](docs/SPEECH_CLEANUP.md). Review flags remain visible; the service does not change the reward winner because its transcript is imperfect.
 
 ```mermaid
 flowchart LR
@@ -25,7 +25,7 @@ flowchart LR
   E --> F[Persist codes / release policy VRAM]
   F --> G[MOSS-v2 decoder]
   G --> H[Ears genuineness + ECAPA reference similarity]
-  H --> I[Pick one full take / ASR and alignment audit]
+  H --> I[Pick one full take / ASR word anchors and alignment audit / clean gaps and edges]
   I --> J[Assemble pauses / encode MP3 128k mono]
   J --> K[Authenticated download + JSON report]
   D -. progress polling .-> C
