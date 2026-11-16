@@ -61,8 +61,14 @@ def main(job):
         'references':{s:{**{k:v for k,v in ref.items() if k in ('sha256','code_key','label')},'codes_sha256':sha(ref['codes'])} for s,ref in refs.items()},
         'source_sha256':{str(f.relative_to(config.ROOT)):sha(f) for directory in ('podcast_server','vendor/podcast_pipeline') for f in sorted((config.ROOT/directory).rglob('*.py'))},
         'codec_revision':'f6e20e543b33d2c252a7ef71bdf8aa71e5ff9169','ears_revision':'818506970d93c809a3295a0a02c40dee8ff2bfc3','ecapa_revision':'0f99f2d0ebe89ac095bcc5903c4dd8f72b367286',
-        'speech_cleanup':POLICY,
-        'execution':'BF16 phased token generation, then decoding/ranking/audit; no voice conversion','python':sys.version.split()[0],'torch':torch.__version__,'gpu':torch.cuda.get_device_name(config.DEVICE)}
+        'speech_cleanup':POLICY,'voice_conversion':opts.voice_conversion,'sidon_enhancement':opts.sidon_enhancement,
+        'execution':('BF16 phased token generation, decoding/ranking/audit, then voice conversion' if opts.voice_conversion else 'BF16 phased token generation, then decoding/ranking/audit; no voice conversion'),'python':sys.version.split()[0],'torch':torch.__version__,'gpu':torch.cuda.get_device_name(config.DEVICE)}
+    if opts.voice_conversion:
+        infer=Path(config.postprocess('vc_infer') or '/nonexistent')
+        if not infer.is_file():raise RuntimeError('Voice converter is not configured')
+        fingerprint['voice_converter']={'revision':'952ef56c945763be50432738e31a32c30b359619','infer_sha256':sha(infer),'wrapper_sha256':sha(config.ROOT/'scripts/voice_conversion.py')}
+    if opts.sidon_enhancement:
+        fingerprint['sidon']={'revision':'b3b02d8bbd55fdbc410e6e46e76ef95ace4fbf52','preprocessor_revision':'da985ba0987f70aaeb84a80f2851cfac8c697a7b','wrapper_sha256':sha(config.ROOT/'scripts/sidon_enhance.py')}
     provenance=path/'provenance.json'
     if provenance.exists() and json.loads(provenance.read_text())!=fingerprint:raise RuntimeError('Job provenance changed; submit a new job')
     atomic(provenance,fingerprint)
@@ -226,6 +232,65 @@ def main(job):
     r('assembling','Assembling speech and scripted pauses; encoding 128 kbit/s mono MP3')
     from .assembly import assemble
     result=assemble(path,episode)
+    if opts.voice_conversion:
+        # Run in a separate, operator-configured environment. The converter acts on
+        # the already selected and cleaned turns; it never alters ranking scores.
+        import shutil
+        python=config.postprocess('vc_python');infer=config.postprocess('vc_infer')
+        if not Path(python).is_file() or not Path(infer).is_file():
+            raise RuntimeError('Voice converter is not configured')
+        if not config.DEVICE.startswith('cuda:'):
+            raise RuntimeError('Voice converter requires a CUDA device')
+        vc=path/'voice-conversion';vc.mkdir(exist_ok=True)
+        cmd=[python,str(config.ROOT/'scripts/voice_conversion.py'),
+             '--job-dir',str(path),'--assets',str(Path(os.getenv('PODCAST_ASSETS',config.DATA/'assets.json'))),
+             '--model-dir',str(Path(infer).parent),'--output-dir',str(vc),
+             '--gpu',config.DEVICE.split(':',1)[1]]
+        r('voice_conversion','Converting selected turns to their respective reference voices')
+        child=subprocess.Popen(cmd,cwd=config.ROOT)
+        while child.poll() is None:
+            if (path/'cancel').exists():
+                child.terminate();child.wait();return 130
+            time.sleep(10)
+            r('voice_conversion','Converting selected turns to their respective reference voices')
+        if child.returncode:raise RuntimeError('Voice conversion failed; see worker.log')
+        shutil.copy2(vc/'podcast-vc.mp3',path/'episode.pending.mp3')
+        (path/'episode.pending.mp3').replace(path/'episode.mp3')
+        probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_format','-of','json',str(path/'episode.mp3')]))
+        result.update(duration_seconds=float(probe['format']['duration']),bytes=(path/'episode.mp3').stat().st_size,
+                      voice_conversion=True,
+                      voice_conversion_note='ASR, alignment and selection scores describe pre-conversion audio.')
+        atomic(path/'result.json',result)
+    if opts.sidon_enhancement:
+        import shutil
+        model=config.postprocess('sidon_model');pre=config.postprocess('sidon_preprocessor')
+        if not model or not pre:raise RuntimeError('SIDON enhancement is not configured')
+        if not config.DEVICE.startswith('cuda:'):raise RuntimeError('SIDON enhancement requires CUDA')
+        dest=path/'sidon';dest.mkdir(exist_ok=True)
+        shutil.copy2(path/'episode.mp3',dest/'before-sidon.mp3')
+        env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=config.DEVICE.split(':',1)[1]
+        cmd=[sys.executable,str(config.ROOT/'scripts/sidon_enhance.py'),'--input',str(dest/'before-sidon.mp3'),
+             '--output',str(dest/'restored.pending.wav'),'--report',str(dest/'report.json'),
+             '--model-dir',model,'--preprocessor-dir',pre]
+        r('sidon_enhancement','Restoring the entire podcast using SIDON')
+        child=subprocess.Popen(cmd,cwd=config.ROOT,env=env)
+        while child.poll() is None:
+            if (path/'cancel').exists():child.terminate();child.wait();return 130
+            time.sleep(5);r('sidon_enhancement','Restoring the entire podcast using SIDON')
+        if child.returncode:raise RuntimeError('SIDON enhancement failed; see worker.log')
+        target=path/'episode.pending.mp3'
+        subprocess.run(['ffmpeg','-nostdin','-v','error','-y','-i',str(dest/'restored.pending.wav'),
+            '-af','loudnorm=I=-18:TP=-1.5:LRA=11','-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','128k',str(target)],check=True,timeout=900)
+        probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_streams','-show_format','-of','json',str(target)]))
+        stream=next(x for x in probe['streams'] if x['codec_type']=='audio')
+        if stream['codec_name']!='mp3' or stream['channels']!=1 or int(stream['bit_rate'])!=128000:raise ValueError('SIDON MP3 format verification failed')
+        duration=float(probe['format']['duration']);expected=json.loads((dest/'report.json').read_text())['output_seconds']
+        if abs(duration-expected)>.2:raise ValueError('SIDON MP3 duration verification failed')
+        subprocess.run(['ffmpeg','-nostdin','-v','error','-i',str(target),'-f','null','-'],check=True,timeout=600)
+        target.replace(path/'episode.mp3');(dest/'restored.pending.wav').unlink()
+        result.update(duration_seconds=duration,bytes=(path/'episode.mp3').stat().st_size,sidon_enhancement=True,
+                      sidon_note='ASR, alignment and selection scores describe pre-enhancement audio.')
+        atomic(path/'result.json',result)
     r('completed','Episode ready to download',**result,completed_candidates=total,selected_turns=len(turns))
     return 0
 

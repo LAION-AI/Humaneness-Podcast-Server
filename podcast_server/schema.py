@@ -35,6 +35,8 @@ class Pause(Strict):
     duration_ms: int=Field(ge=0,le=10000)
 
 class Options(Strict):
+    sidon_enhancement: bool=Field(default=True,description='Restore the complete output with SIDON after voice conversion')
+    voice_conversion: bool=Field(default=True,description='Convert each selected turn to its configured reference voice')
     best_of: int=Field(default=4,ge=1,le=16)
     seed: int=Field(default=20261109,ge=0,le=2147483647)
     temperature: float=Field(default=1.0,ge=0,le=1.5)

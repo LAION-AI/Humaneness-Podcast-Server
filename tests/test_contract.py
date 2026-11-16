@@ -10,7 +10,7 @@ def example():return json.loads((ROOT/'examples/short-en.json').read_text())
 def test_defaults_and_multilingual():
     x=example();x.pop('options')
     for lang in ('de','en','es','fr','nl'):
-        x['language']=lang;e=Episode.model_validate(x);assert e.options.best_of==4 and e.options.temperature==1 and e.options.cfg==2.5
+        x['language']=lang;e=Episode.model_validate(x);assert e.options.best_of==4 and e.options.temperature==1 and e.options.cfg==2.5 and e.options.sidon_enhancement is True and e.options.voice_conversion is True
 
 @pytest.mark.parametrize('change',[
     lambda x:x['options'].update(best_of=3),lambda x:x['options'].update(cfg=float('nan')),
