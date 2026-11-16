@@ -45,7 +45,7 @@ def create(episode,client,idempotency=None):
         atomic(path/'script.json',body)
         receipt={'job_id':job,'job_token':key,'status_url':f'{config.PREFIX}/v1/jobs/{job}','poll_after_seconds':15}
         atomic(path/'receipt.json',receipt)
-        atomic(path/'progress.json',{'phase':'queued','message':'Waiting for the single GPU worker','speech_turns':sum(t['type']=='speech' for t in body['turns']),'completed_candidates':0,'selected_turns':0})
+        atomic(path/'progress.json',{'phase':'queued','message':'Waiting for an available GPU worker','speech_turns':sum(t['type']=='speech' for t in body['turns']),'completed_candidates':0,'selected_turns':0})
         c.execute('INSERT INTO jobs VALUES(?,?,?,?,?,?,?,?,?)',(job,hashlib.sha256(key.encode()).hexdigest(),client,'queued',now,now,0,idempotency,digest))
         return receipt,False
 

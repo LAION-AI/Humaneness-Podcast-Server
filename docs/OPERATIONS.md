@@ -4,7 +4,7 @@
 
 Install the pinned environment and assets as described in README. The API process stays lightweight; it launches one subprocess per job. That subprocess loads the policy once, generates all unfinished candidates, releases it, then loads the decoder/judges and assembles the episode. Process exit releases CUDA memory. This amortizes loads over a long episode, but short jobs have substantial cold overhead.
 
-Use **one Uvicorn worker**. A filesystem flock prevents two queue supervisors from running against the same data store. Multiple independent stores on the same GPU are not coordinated; operators must budget those separately.
+Use **one Uvicorn worker**. Set `PODCAST_GPU_POOL=auto` to dispatch separate jobs to GPUs without other compute processes; each job still uses one GPU. GPU availability checks are advisory and cannot prevent other applications from claiming a device afterward. A filesystem flock prevents two queue supervisors from running against the same data store. Multiple independent stores on the same GPU are not coordinated; operators must budget those separately.
 
 ```bash
 export PODCAST_DEVICE=cuda:0
@@ -47,11 +47,7 @@ Storage guards check before admission and new candidate work. A concurrent exter
 
 `integrations/fastapi_proxy.py` registers a dedicated `/podcast` prefix before the host application's catch-all. The podcast process listens only on loopback; the existing tunnel points to the host server as before. Submission/polling/download requests are short, so there is no 20-minute HTTP response for Cloudflare to time out.
 
-The current public deployment reuses the already-running FastAPI facade/tunnel at:
-
-`https://arrive-locations-parade-research.trycloudflare.com/podcast/`
-
-The original Robby URL remains `https://diane-asylum-understood-invoice.trycloudflare.com/desk-robot/`. No new Cloudflare tunnel is required for this service. If your public prefix differs, set `PODCAST_ROOT_PATH` consistently so Swagger and response URLs resolve correctly.
+An existing FastAPI facade can proxy a dedicated `/podcast/` prefix. Alternatively, a separate Cloudflare quick tunnel can expose the loopback service; its temporary hostname changes on restart. Set `PODCAST_ROOT_PATH` consistently if mounting under a prefix so Swagger and response URLs resolve correctly.
 
 Only trust the `CF-Connecting-IP` client-address header from a trusted loopback ingress which receives it from Cloudflare. If exposing a different proxy or binding directly to the Internet, configure/strip forwarded headers and add authentication/rate limiting there. Job capability tokens are needed even for the file download. Do not log Authorization headers, cookies, request bodies or job-token receipts. TLS is supplied by the ingress. Long-term uptime requires your own stable domain/tunnel and process supervision.
 
@@ -70,3 +66,12 @@ Reference recordings are not covered by this server's CC BY 4.0 code license. Th
 - **Failed/retrying:** read private `jobs/<id>/events.jsonl` and `worker.log`. Use `/retry` after fixing a persistent cause. Saved candidate checksums should remain unchanged.
 - **Bad download:** the endpoint is available only after full MP3 verification. Check proxy Range/header handling and the job token.
 - **Model import mismatch:** use the pinned environment; custom remote model code and Transformer internals are version sensitive.
+
+## Voice converter
+
+The default per-turn converter uses an isolated environment and prepared assets. `scripts/setup_postprocess.sh` installs it and registers pinned paths outside Git; operator overrides include `PODCAST_VC_PYTHON` pointing to an isolated converter environment and `PODCAST_VC_INFER` pointing to the `infer.py` in the pinned `laion/Humaneness-Voice-Converter` snapshot `952ef56c945763be50432738e31a32c30b359619`. The local integration invokes the official inference script per selected turn and requires CUDA. Original and converted intermediate files are stored in the private job directory, consuming additional storage. Failed conversion causes a failed/retried job rather than silently returning the original. The converter accepts 1–30-second inputs; shorter turns are padded with trailing silence. Neither the converted audio nor its speaker identity is validated by the original ASR, alignment, or ranking scores.
+
+
+## SIDON enhancement
+
+SIDON v0.1 (MIT) runs by default on the full assembled episode after voice conversion when enabled. The setup script registers pinned paths; set `PODCAST_SIDON_MODEL` to the pinned Hugging Face model snapshot `b3b02d8bbd55fdbc410e6e46e76ef95ace4fbf52` and `PODCAST_SIDON_PREPROCESSOR` to the pinned `facebook/w2v-bert-2.0` snapshot `da985ba0987f70aaeb84a80f2851cfac8c697a7b`. The wrapper follows the upstream demo with 16 kHz input, 48 kHz output and 96-second chunks. Inputs and output are archived in private job storage; SIDON is generative and may change content or voice. Users can opt out with `options.sidon_enhancement=false`.

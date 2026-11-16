@@ -2,9 +2,9 @@
 
 **A script in, a complete podcast out.** This standalone FastAPI service turns a structured conversation into **128 kbit/s mono MP3** using LAION's full [Humanness Voice Podcast checkpoint](https://huggingface.co/laion/Humanness-Voice-Podcast), a fine-tune of Humaneness Voice Large 1.7. Submit a job, receive an ID immediately, poll detailed progress, then download the episode. Completed candidate checkpoints survive worker crashes and service restarts.
 
-**[Live HTTPS service](https://arrive-locations-parade-research.trycloudflare.com/podcast/)** · **[Interactive API](https://arrive-locations-parade-research.trycloudflare.com/podcast/docs)** · **[Script Writing Guide](docs/PODCAST_SCRIPT_WRITING_GUIDE.md)** · **[LLM writer system prompt](docs/SCRIPT_WRITER_SYSTEM_PROMPT.txt)** · **[Five-language listening examples](https://huggingface.co/spaces/laion/Humanness-Voice-Podcast)**
+**[Live HTTPS service](https://his-weblogs-certificate-attachment.trycloudflare.com/)** · **[Interactive API](https://his-weblogs-certificate-attachment.trycloudflare.com/docs)** · **[Script Writing Guide](docs/PODCAST_SCRIPT_WRITING_GUIDE.md)** · **[LLM writer system prompt](docs/SCRIPT_WRITER_SYSTEM_PROMPT.txt)** · **[Five-language listening examples](https://huggingface.co/spaces/laion/Humanness-Voice-Podcast)**
 
-The live service uses an existing Cloudflare tunnel. This temporary hostname may change after a tunnel restart. Its queue is deliberately bounded; it is a research service, not a guaranteed-capacity production endpoint.
+The live service uses a Cloudflare quick tunnel. This temporary hostname may change after a tunnel restart. Its queue is deliberately bounded; it is a research service, not a guaranteed-capacity production endpoint.
 
 ## What it does
 
@@ -12,7 +12,8 @@ The live service uses an existing Cloudflare tunnel. This temporary hostname may
 - Stable speaker labels mapped to fixed reference voices, short emotional cues and explicit scripted pauses.
 - Default **Best-of-4**; selectable **1, 2, 4, 8 or 16** independent candidates per turn.
 - Listener-approved sparse spontaneous, relaxed, gentle delivery; temperature **1.0**, CFG **2.5**.
-- Exact reward: **50% normalized Humaneness Ears genuineness + 50% ECAPA similarity to the reference**. No voice conversion, additional LoRA, Content Enjoyment term or WER multiplier.
+- Exact pre-conversion Best-of-N reward: **50% normalized Humaneness Ears genuineness + 50% ECAPA similarity to the reference**; no Content Enjoyment term or WER multiplier.
+- By default, convert each selected turn to its speaker reference with [Humaneness Voice Converter](https://huggingface.co/laion/Humaneness-Voice-Converter), assemble the episode, then restore the **whole episode** with [SIDON v0.1](https://huggingface.co/sarulab-speech/sidon-v0.1). Both stages can change the audio and require listening review.
 - Durable SQLite queue, atomic token/audio checkpoints, bounded retries, smaller microbatches after OOM, cancellation, retry and private authenticated downloads.
 - Final ASR diagnostics and **script-anchored audio cleanup, on by default**: 100-ms fades at verified edges, removal of unrequested lead-ins/tails, and silence in long verified internal gaps while preserving their duration. [Editing policy and tests](docs/SPEECH_CLEANUP.md). Review flags remain visible; the service does not change the reward winner because its transcript is imperfect.
 
@@ -20,16 +21,20 @@ The live service uses an existing Cloudflare tunnel. This temporary hostname may
 flowchart LR
   A[Human or local/API LLM writes JSON] --> B[Validate script]
   B --> C[FastAPI: 202 + job ID + private token]
-  C --> D[Durable queue / one GPU worker]
+  C --> D[Durable queue / GPU worker pool]
   D --> E[Podcast BF16 policy: N acoustic-code takes per turn]
   E --> F[Persist codes / release policy VRAM]
   F --> G[MOSS-v2 decoder]
   G --> H[Ears genuineness + ECAPA reference similarity]
   H --> I[Pick one full take / ASR word anchors and alignment audit / clean gaps and edges]
-  I --> J[Assemble pauses / encode MP3 128k mono]
-  J --> K[Authenticated download + JSON report]
+  I --> J[Voice Converter: each turn to its reference]
+  J --> K[Assemble the complete episode]
+  K --> L[SIDON: restore complete episode]
+  L --> M[Authenticated MP3 + JSON report]
   D -. progress polling .-> C
 ```
+
+The converter is applied after Best-of-N selection, not during reward calculation. SIDON is recommended as a follow-up because it may sound more natural; compare both outputs, because improvement is not guaranteed and speaker similarity or words can change. ASR, speaker scores and alignment in reports describe the pre-conversion audio. Set `options.voice_conversion=false` or `options.sidon_enhancement=false` to opt out of either step. See [API](docs/API.md) and [operations](docs/OPERATIONS.md).
 
 ## Try the public API
 
@@ -37,7 +42,7 @@ Use Python 3.12 and `pip install httpx` for the client only:
 
 ```bash
 python scripts/client.py examples/short-de.json \
-  --base https://arrive-locations-parade-research.trycloudflare.com/podcast \
+  --base https://his-weblogs-certificate-attachment.trycloudflare.com \
   --receipt my-job.local.json --output my-podcast.mp3
 ```
 
@@ -62,14 +67,15 @@ export HF_HOME=/data/huggingface
 export PODCAST_CACHE=/data/podcast-models
 export PODCAST_DATA=/data/podcast-jobs
 python -m podcast_server.prepare
+bash scripts/setup_postprocess.sh
 
 export PODCAST_DEVICE=cuda:0
 python -m uvicorn podcast_server.app:app --host 127.0.0.1 --port 8816 --workers 1 --no-access-log
 ```
 
-Open `http://127.0.0.1:8816/`. Downloads are pinned, including the model's custom Python inference code. The preparation command writes local asset paths outside the repository; it does not download training/optimizer checkpoints. Allow roughly **15–25 GB for model caches plus temporary files**, and separate space for jobs. Measure your own installation before sizing a deployment. The Podcast policy weights alone occupy about 8.25 GB on disk. Existing caches are reused.
+Open `http://127.0.0.1:8816/`. Downloads are pinned, including the model's custom Python inference code. The preparation command writes local asset paths outside the repository; it does not download training/optimizer checkpoints. Allow at least **25 GB for model caches plus temporary files and the isolated converter environment**, and separate space for jobs. Measure your own installation before sizing a deployment. The Podcast policy weights alone occupy about 8.25 GB on disk. Existing caches are reused.
 
-A dedicated 24 GB GPU is the comfortable deployment target. This implementation deliberately runs policy generation and waveform decoding/judging in separate phases, which also works on our shared RTX 3090 with approximately 11.6 GiB initially free. Exact free-memory requirements depend on batch size, script length and compiled graphs. The server never kills other GPU processes.
+The original TTS-only route has been tested on a shared RTX 3090, and the default conversion-plus-SIDON route has been tested on an A100 80 GB. The full new default pipeline has not been validated on a 24 GB GPU; memory requirements vary with utterance length, model stage and compiled graphs. The server never kills other GPU processes.
 
 For an existing reverse proxy, mount `/podcast/` to `127.0.0.1:8816/` and set `PODCAST_ROOT_PATH=/podcast`. The included [FastAPI proxy adapter](integrations/fastapi_proxy.py) can be registered before an existing catch-all. Forward `Authorization`, `Idempotency-Key`, `Range` and cookies. Reuse your existing HTTPS/Cloudflare tunnel. [Deployment, storage and restart instructions](docs/OPERATIONS.md).
 
@@ -82,6 +88,9 @@ For an existing reverse proxy, mount `/podcast/` to `127.0.0.1:8816/` and set `P
 | Genuineness estimates | [laion/humaneness-ears-base-medium](https://huggingface.co/laion/humaneness-ears-base-medium), **medium** | `818506970d93c809a3295a0a02c40dee8ff2bfc3` |
 | Speaker similarity | [speechbrain/spkrec-ecapa-voxceleb](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb) | `0f99f2d0ebe89ac095bcc5903c4dd8f72b367286` |
 | Final transcript diagnostic | [nvidia/parakeet-tdt-0.6b-v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) | `541d1f99c6b0c3cd0b11a95167540bb8edefd82b` |
+| Reference voice conversion | [laion/Humaneness-Voice-Converter](https://huggingface.co/laion/Humaneness-Voice-Converter/tree/952ef56c945763be50432738e31a32c30b359619) | `952ef56c945763be50432738e31a32c30b359619` |
+| Full-episode speech restoration | [sarulab-speech/sidon-v0.1](https://huggingface.co/sarulab-speech/sidon-v0.1/tree/b3b02d8bbd55fdbc410e6e46e76ef95ace4fbf52) | `b3b02d8bbd55fdbc410e6e46e76ef95ace4fbf52` |
+| SIDON preprocessor | [facebook/w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0/tree/da985ba0987f70aaeb84a80f2851cfac8c697a7b) | `da985ba0987f70aaeb84a80f2851cfac8c697a7b` |
 | Word boundaries, supported languages | [Qwen/Qwen3-ForcedAligner-0.6B-hf](https://huggingface.co/Qwen/Qwen3-ForcedAligner-0.6B-hf) | `c07281df297b9905d24a508279258cccf987a064` |
 | Fixed example reference MP3s and exact acoustic codes | [Podcast examples/references](https://huggingface.co/laion/Humanness-Voice-Podcast/tree/a1f8946bd654db1c19b6c476ed6b4acde384e882/examples/references) | `a1f8946bd654db1c19b6c476ed6b4acde384e882` |
 
@@ -91,14 +100,14 @@ The German reference pair is intentionally also used for other languages, matchi
 
 The server reuses the tested inference implementation, including BF16, fused local prediction, layerwise semantic compilation/CUDA graphs identical-prompt prefill reuse after an equality check, and repeated-shape waveform decoder graphs validated against eager decoding. Candidate count and execution microbatch are distinct. OOM fallback halves the execution microbatch while preserving the requested N; that can change random draws, and is recorded. Completed candidate tokens are reused after restart, rather than synthesizing the whole episode again.
 
-The final MP3 is assembled in bounded memory, so a 20-minute episode does not require concatenating all PCM in RAM. All model loads, candidate inference shapes, scores, source references, selections, recovery events and review flags are available in the job directory/report. [Measured tests and limitations](docs/TESTING.md). The earlier dedicated pipeline's throughput measurements are [published with its model](https://huggingface.co/laion/Humanness-Voice-Podcast/blob/main/guides/PIPELINE.md); do not treat them as the end-to-end latency of this shared public service.
+The initial MP3 is assembled in bounded memory. SIDON currently reads the full episode into host memory and processes it on GPU in 96-second chunks; allow host RAM proportional to the audio duration. All model loads, candidate inference shapes, scores, source references, selections, recovery events and review flags are available in the job directory/report. [Measured tests and limitations](docs/TESTING.md). The earlier dedicated pipeline's throughput measurements are [published with its model](https://huggingface.co/laion/Humanness-Voice-Podcast/blob/main/guides/PIPELINE.md); do not treat them as the end-to-end latency of this shared public service.
 
 ## Limits and data handling
 
 - Submit/poll/download jobs, not live whole-episode streaming. Generation is full-turn Best-of-N. Concurrent overlapping speaker synthesis and arbitrary timestamps are not implemented.
 - Each generated speech turn is capped at 25.6 seconds. Split long passages. Total duration is not guaranteed from word count.
 - A favorable genuineness/speaker score does not guarantee the correct words. ASR is fallible too. Listen to flagged turns before publication.
-- One worker, four queued/running jobs by default, six submissions per hour per ingress client address, 512 KiB requests, and bounded storage. GPU-capacity waiting is visible. Configure a trusted reverse proxy before exposing the loopback server directly.
+- One worker by default, or one worker per currently idle GPU with `PODCAST_GPU_POOL=auto`; four queued/running jobs by default, six submissions per hour per ingress client address, 512 KiB requests, and bounded storage. GPU-capacity waiting is visible. Configure a trusted reverse proxy before exposing the loopback server directly.
 - Scripts, token checkpoints, selected clips, reports and MP3s are private to an unguessable job capability; **not encrypted at rest**. No private microphone recordings, credentials or model weights are committed. Default retention is 72 hours; users can cancel and delete their jobs. Protect a sensitive deployment with your own authentication/access gateway.
 - Automatic recovery is bounded. Persistent missing assets, incompatible CUDA/runtime errors or exhausted disk eventually need operator intervention. There is no promise that every conceivable failure can repair itself.
 
@@ -108,7 +117,7 @@ The final MP3 is assembled in bounded memory, so a 20-minute episode does not re
 - `vendor/podcast_pipeline/`: attributed, pinned extraction of the previously validated inference/scoring code; `SOURCE.json` records source hashes.
 - `docs/`: writing guide, exact LLM system prompt, API, operations, tests and upstream prompting history.
 - `examples/`: ready-to-submit English and German scripts.
-- `scripts/`: resumable client and API process management.
+- `scripts/`: resumable client, API process management, and [voice conversion](scripts/voice_conversion.py) and [SIDON](scripts/sidon_enhance.py) processing. The upstream converter inference implementation and weights are downloaded at pinned revisions.
 - `tests/`: CPU contract, persistence, private API access and audio assembly tests.
 - `integrations/`: optional existing-server reverse-proxy adapter.
 

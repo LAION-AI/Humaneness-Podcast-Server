@@ -39,7 +39,7 @@ Poll every 15–60 seconds. `Location` and `Retry-After` are also returned on su
 
 ## Progress and recovery
 
-Job states are `queued`, `running`, `retrying`, `completed`, `failed`, `cancelled`. Detailed `phase` values include `waiting_for_gpu`, `loading_policy`, `generating`, `loading_judges`, `decoding_and_ranking`, `auditing`, `assembling`, `completed` and `failed`.
+Job states are `queued`, `running`, `retrying`, `completed`, `failed`, `cancelled`. Detailed `phase` values include `waiting_for_gpu`, `loading_policy`, `generating`, `loading_judges`, `decoding_and_ranking`, `auditing`, `assembling`, `voice_conversion`, `sidon_enhancement`, `completed` and `failed`.
 
 Progress includes speech-turn count, completed/total candidates, selected turns, current turn, microbatch size, heartbeat, elapsed wall time, process attempts and the latest recoverable error. GPU/compile/model-load phases may have a stationary candidate count: that is not evidence of a hung request. No fabricated ETA is returned before enough evidence exists. The report exposes genuine selection/audit data; it does not fill missing model outputs with zero.
 
@@ -47,7 +47,7 @@ The durable queue uses SQLite WAL. Token files and each selected-turn record are
 
 For an allocation failure, token microbatch size is halved; N is preserved. Decoder microbatching is independent. At microbatch 1, an OOM exits the worker so the supervisor can release its process/context and retry. Up to three worker process attempts are allowed. A worker with no progress heartbeat for 30 minutes, or a six-hour process runtime, is terminated and retried within that limit. GPU-capacity waiting is visible, retries periodically and does not consume the error budget. An API shutdown stops its worker; abrupt parent death also terminates the worker on Linux.
 
-After persistent failure, inspect `last_error` and the private report/log, fix the cause, then call `/retry`. It resets the bounded process-attempt budget and keeps completed work. It never changes the model, reduces requested N, introduces voice conversion, or switches ranking criteria. Reference/model download errors need operator intervention if the pinned assets are missing. Cancellations are explicit and do not become automatic retries.
+After persistent failure, inspect `last_error` and the private report/log, fix the cause, then call `/retry`. It resets the bounded process-attempt budget and keeps completed work. It never changes the TTS model, reduces requested N, or switches ranking criteria. Voice conversion and SIDON run by default and can be disabled independently in job options. Reference/model download errors need operator intervention if the pinned assets are missing. Cancellations are explicit and do not become automatic retries.
 
 ## Result and review
 
@@ -58,3 +58,12 @@ All N scores are retained for selection transparency. N=1 has no fabricated rank
 New jobs apply [script-anchored cleanup](SPEECH_CLEANUP.md) by default after selection. The turn report contains real Parakeet `asr_words`, `timestamp_status`, and an `edit` object with separately verified first/last words, removed head/tail seconds, fade lengths, internal gap edits and timestamp disagreements. `asr`/WER diagnose the **selected original waveform before cleanup**; they are not a fabricated transcript of the edited file. Internal gaps retain their length. Final job metadata includes aggregate `speech_cleanup` counts and durations. Unverified regions remain reviewable rather than being deleted on an unsupported guess.
 
 The job token protects access, not encryption at rest. Default expiration is 72 hours after the terminal state; cleanup runs in the supervisor. This server has no persistent public audio listing. External source references, scripts, episode rights and any personal information are the operator's responsibility.
+
+## Reference voice conversion
+
+`options.voice_conversion` defaults to `true` and converts each selected speech turn to the matching configured reference using the separately installed, pinned Humaneness Voice Converter. Set it to `false` to opt out. When requested but not installed, submission returns 503. Conversion happens after the original Best-of-N selection and cleanup; it does not alter the selection scores. The normal audio endpoint returns the converted MP3 after SIDON, when SIDON is enabled. Reported ASR, alignment, timeline and ranking scores refer to the **original pre-conversion audio**, not the converted output. The conversion can change words, timing, and speaker identity; listen and review it. The JSON report includes conversion metadata and source/reference hashes. It makes one conversion per turn with ten flow steps.
+
+
+## SIDON full-episode enhancement
+
+`options.sidon_enhancement` defaults to `true`. SIDON restores the complete assembled episode after voice conversion (when enabled); set it to `false` to opt out. The normal audio endpoint returns the restored MP3, and the private report contains model revision and processing time. ASR, alignment, speaker scores and the original timeline describe the audio before SIDON (and before voice conversion, when used); they are not measurements of the restored result. If SIDON is unavailable or fails, the job fails or retries rather than silently returning an unenhanced file.

@@ -118,3 +118,9 @@ own completed job with `python tests/browser_cleanup.py --receipt cleanup.local.
 --result browser-result.json --base https://YOUR-HOST/podcast/`; install Playwright
 in the test environment. Receipts remain private. The browser used a muted audio
 sink, so this is not a physical speaker/headphone listening test.
+
+## Default Voice Converter + SIDON integration (16 November 2026)
+
+On an A100 80 GB / CUDA 12.4 host, a fresh public-API job submitted without `options` used Best-of-4, per-turn Humaneness Voice Converter and full-episode SIDON. Both selected turns were converted, the SIDON report identified the pinned model, and the authenticated MP3 download succeeded. End-to-end elapsed time was 97.1 seconds, with SIDON reporting 3.555 seconds. The very short first utterance triggered an ASR disagreement and unverified-edge warning; the TTS selected clip was 23.36 seconds long. This is a real quality limitation, not evidence that short text always produces a short or correct take. A separate 0.6-second source clip tested the converter's trailing-silence padding to one second successfully. These checks are not a listening evaluation.
+
+For a separate ten-turn German webcoding episode, SIDON's full-episode GPU step took 3.164 seconds including model loading, excluding MP3 encoding. On automatic per-turn measurements, Parakeet WER versus the 162-word script was 6/162 both before and after SIDON; mean ECAPA cosine to the respective references was 0.790 before and 0.769 after; mean Ears genuineness was 4.013/6 and 4.058/6 respectively. These are model estimates for one example, not a demonstration that SIDON improves subjective quality or identity. A 137.76-second duplicate-audio test exercised the two-chunk path and preserved duration; it was not a speech-quality test.

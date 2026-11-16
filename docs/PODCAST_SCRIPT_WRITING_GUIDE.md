@@ -97,7 +97,7 @@ For N > 1, the winner maximizes:
 + 0.5 × clip(ECAPA cosine(candidate, reference), 0, 1)
 ```
 
-This is fixed normalization, not per-candidate min/max. No Content Enjoyment term, WER multiplier, voice conversion, DPO or added LoRA is used. For N=1 the sole take is retained without ranking. Parakeet and forced alignment are diagnostics after selection. Uncertain transcript/alignment results remain visible as review flags; there is no hidden re-selection or “quality retry” that changes N or the reward. Runtime errors (OOM, invalid/empty output, interrupted process) trigger bounded retries and are logged separately.
+This is fixed normalization, not per-candidate min/max. No Content Enjoyment term, WER multiplier, DPO or added LoRA is used. Voice conversion runs after selection by default, followed by SIDON after assembly. For N=1 the sole take is retained without ranking. Parakeet and forced alignment are diagnostics after selection. Uncertain transcript/alignment results remain visible as review flags; there is no hidden re-selection or “quality retry” that changes N or the reward. Runtime errors (OOM, invalid/empty output, interrupted process) trigger bounded retries and are logged separately.
 
 ## Ask an LLM to write the script
 

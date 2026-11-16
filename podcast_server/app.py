@@ -1,5 +1,5 @@
 """Public asynchronous FastAPI service. No long generation is held in an HTTP request."""
-import asyncio,json,secrets,hashlib,time
+import asyncio,json,secrets,hashlib,time,os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI,Request,HTTPException,Response,Header
@@ -35,7 +35,7 @@ def health():
     try:a=config.assets();ready=all(Path(a[k]).exists() for k in ('model','codec','asr','aligner'))
     except (RuntimeError,KeyError):ready=False
     with store.connect() as c:counts={s:n for s,n in c.execute('SELECT state,count(*) FROM jobs GROUP BY state').fetchall()}
-    return {'status':'ok','assets_ready':ready,'jobs':counts,'defaults':{'best_of':4,'temperature':1,'cfg':2.5,'mp3_bitrate_bps':128000,'channels':1,'script_anchored_cleanup':True},'max_queue':config.MAX_QUEUE,'retention_hours':config.TTL_HOURS,'device':config.DEVICE}
+    return {'status':'ok','assets_ready':ready,'jobs':counts,'defaults':{'best_of':4,'temperature':1,'cfg':2.5,'mp3_bitrate_bps':128000,'channels':1,'script_anchored_cleanup':True,'sidon_enhancement':True,'voice_conversion':True},'max_queue':config.MAX_QUEUE,'retention_hours':config.TTL_HOURS,'device':config.DEVICE,'gpu_pool':os.getenv('PODCAST_GPU_POOL','single')}
 
 @app.get('/v1/voices')
 def voices():
@@ -53,6 +53,10 @@ def validate(body:Episode):
 def submit(body:Episode,request:Request,response:Response,idempotency_key:str|None=Header(default=None,max_length=128)):
     validate(body)
     if not health()['assets_ready']:raise HTTPException(503,'Model assets not prepared')
+    if body.options.sidon_enhancement and not (Path(config.postprocess('sidon_model') or '/nonexistent','feature_extractor_cuda.pt').is_file() and Path(config.postprocess('sidon_model') or '/nonexistent','decoder_cuda.pt').is_file() and Path(config.postprocess('sidon_preprocessor') or '/nonexistent','preprocessor_config.json').is_file()):
+        raise HTTPException(503,'SIDON enhancement is not configured')
+    if body.options.voice_conversion and not all(Path(config.postprocess(k) or '/nonexistent').is_file() for k in ('vc_python','vc_infer')):
+        raise HTTPException(503,'Voice converter is not configured')
     client=request.cookies.get('podcast_client')
     if not client or len(client)!=43:client=secrets.token_urlsafe(32)
     # Server-controlled ingress should supply the original client address. Loopback-only defaults deliberately share a rate limit.
@@ -81,7 +85,8 @@ def cancel(job:str,request:Request):
     row=authorized(job,request)
     if row['state'] in store.TERMINAL:return {'state':row['state']}
     (store.folder(job)/'cancel').touch()
-    if row['state']=='queued':store.update(job,'cancelled')
+    if row['state']=='queued':
+        with store.connect() as c:c.execute("UPDATE jobs SET state='cancelled',updated=? WHERE id=? AND state='queued'",(time.time(),job))
     return {'state':'cancellation_requested'}
 
 @app.post('/v1/jobs/{job}/retry',status_code=202)
@@ -105,7 +110,7 @@ def audio(job:str,request:Request):
 def report(job:str,request:Request):
     row=authorized(job,request);p=store.folder(job)
     def read(name,default):return json.loads((p/name).read_text()) if (p/name).exists() else default
-    return {'job':store.status(row),'script':read('script.json',{}),'provenance':read('provenance.json',{}),'timeline':read('timeline.json',[]),'turns':[json.loads(x.read_text()) for x in sorted(p.glob('turn-*.json'))],'events':[json.loads(x) for x in (p/'events.jsonl').read_text().splitlines()] if (p/'events.jsonl').exists() else []}
+    return {'job':store.status(row),'script':read('script.json',{}),'provenance':read('provenance.json',{}),'timeline':read('timeline.json',[]),'voice_conversion':read('voice-conversion/conversion-report.json',None),'sidon_enhancement':read('sidon/report.json',None),'turns':[json.loads(x.read_text()) for x in sorted(p.glob('turn-*.json'))],'events':[json.loads(x) for x in (p/'events.jsonl').read_text().splitlines()] if (p/'events.jsonl').exists() else []}
 
 @app.delete('/v1/jobs/{job}')
 def delete(job:str,request:Request):

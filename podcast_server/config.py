@@ -18,3 +18,13 @@ def assets():
     path=Path(os.getenv('PODCAST_ASSETS',DATA/'assets.json'))
     if not path.is_file():raise RuntimeError('Assets not prepared. Run python -m podcast_server.prepare')
     return json.loads(path.read_text())
+
+POSTPROCESS_ENV={'vc_python':'PODCAST_VC_PYTHON','vc_infer':'PODCAST_VC_INFER',
+                 'sidon_model':'PODCAST_SIDON_MODEL','sidon_preprocessor':'PODCAST_SIDON_PREPROCESSOR'}
+
+def postprocess(name):
+    """Operator-only environment overrides or prepared paths in the private asset file."""
+    value=os.getenv(POSTPROCESS_ENV[name])
+    if value:return value
+    try:return assets().get('postprocess',{}).get(name,'')
+    except RuntimeError:return ''
